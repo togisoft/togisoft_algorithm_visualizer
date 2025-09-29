@@ -35,7 +35,8 @@ pub fn print_menu_banner() -> u32 {
         "7. Heap Sort",
         "8. Shell Sort",
         "9. Radix Sort",
-        "10. Exit"
+        "10. Settings",
+        "11. Exit"
     ];
 
     // Main menu loop
