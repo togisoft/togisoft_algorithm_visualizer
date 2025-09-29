@@ -3,9 +3,9 @@ use crossterm::terminal::{disable_raw_mode, LeaveAlternateScreen};
 use crossterm::ExecutableCommand;
 use std::io::{stdout, Write};
 use rand::prelude::SliceRandom;
-use crate::array_manager::{ArrayData, ArrayManager};
-use crate::dialog::show_no_array_selected;
-use crate::enums::TeachingQuestion;
+use crate::common::array_manager::{ArrayData, ArrayManager};
+use crate::common::dialog::show_no_array_selected;
+use crate::common::enums::TeachingQuestion;
 
 /// Executes a sorting function on the currently selected array in the manager.
 ///

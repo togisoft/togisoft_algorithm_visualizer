@@ -1,33 +1,14 @@
-// Import all the modules that make up the application
-mod welcome_banner;
-mod menu;
-mod array_manager;
-mod bubble_sort;
-mod dialog;
-mod selection_sort;
-mod helper;
-mod insertion_sort;
-mod enums;
-mod merge_sort;
-mod quick_sort;
-mod heap_sort;
-mod shell_short;  // Note: This should probably be 'shell_sort' for consistency
-mod radix_sort;
+mod sort_algorithms;
+mod common;
+mod search_algorithms;
 
 // Import specific functions from modules
 use crate::welcome_banner::print_welcome_banner;
 use std::error::Error;
-use crate::array_manager::{array_management_screen, ArrayManager};
-use crate::bubble_sort::bubble_sort_visualization;
-use crate::heap_sort::heap_sort_visualization;
-use crate::helper::run_sort;
-use crate::insertion_sort::insertion_sort_visualization;
-use crate::menu::print_menu_banner;
-use crate::merge_sort::merge_sort_visualization;
-use crate::quick_sort::quick_sort_visualization;
-use crate::radix_sort::radix_sort_visualization;
-use crate::selection_sort::selection_sort_visualization;
-use crate::shell_short::shell_sort_visualization;  // Note: This should probably be 'shell_sort'
+use crate::common::*;
+use crate::search_algorithms::{binary_search_visualization, linear_search_visualization};
+use crate::sort_algorithms::*;
+use crate::sort_algorithms::counting_sort::counting_sort_visualization;
 
 /// Main entry point for the algorithm visualizer application
 ///
@@ -37,6 +18,10 @@ use crate::shell_short::shell_sort_visualization;  // Note: This should probably
 /// 3. Enters a main loop that displays a menu and processes user selections
 /// 4. Exits when the user selects the exit option
 fn main() -> Result<(), Box<dyn Error>> {
+
+    // Load settings
+    let mut settings = Settings::load();
+
     // Display the welcome banner
     print_welcome_banner();
 
@@ -56,38 +41,66 @@ fn main() -> Result<(), Box<dyn Error>> {
             },
             2 => {
                 // Bubble Sort: Visualize the bubble sort algorithm
-                run_sort(&mut array_manager, |array| bubble_sort_visualization(array));
+                run_sort(&mut array_manager, |array| linear_search_visualization(array));
             },
             3 => {
                 // Selection Sort: Visualize the selection sort algorithm
-                run_sort(&mut array_manager, |array| selection_sort_visualization(array));
+                run_sort(&mut array_manager, |array| binary_search_visualization(array));
             },
             4 => {
-                // Insertion Sort: Visualize the insertion sort algorithm
-                run_sort(&mut array_manager, |array| insertion_sort_visualization(array));
+                run_sort(&mut array_manager, |array| bubble_sort_visualization(array));
             },
             5 => {
-                // Quick Sort: Visualize the quick sort algorithm
-                run_sort(&mut array_manager, |array| quick_sort_visualization(array));
+                run_sort(&mut array_manager, |array| bucket_sort_visualization(array));
             },
             6 => {
-                // Merge Sort: Visualize the merge sort algorithm
-                run_sort(&mut array_manager, |array| merge_sort_visualization(array));
+                run_sort(&mut array_manager, |array| cocktail_sort_visualization(array));
             },
             7 => {
-                // Heap Sort: Visualize the heap sort algorithm
-                run_sort(&mut array_manager, |array| heap_sort_visualization(array));
+                run_sort(&mut array_manager, |array| comb_sort_visualization(array));
             },
             8 => {
-                // Shell Sort: Visualize the shell sort algorithm
-                run_sort(&mut array_manager, |array| shell_sort_visualization(array));
+                run_sort(&mut array_manager, |array| counting_sort_visualization(array));
             },
             9 => {
-                // Radix Sort: Visualize the radix sort algorithm
-                run_sort(&mut array_manager, |array| radix_sort_visualization(array));
+                run_sort(&mut array_manager, |array| gnome_sort_visualization(array));
             },
             10 => {
+                run_sort(&mut array_manager, |array| heap_sort_visualization(array));
+            },
+            11 => {
+               run_sort(&mut array_manager, |array| insertion_sort_visualization(array));
+            },
+            12 => {
+                run_sort(&mut array_manager, |array| merge_sort_visualization(array));
+            },
+            13 => {
+                run_sort(&mut array_manager, |array| pancake_sort_visualization(array));
+            },
+            14 => {
+                run_sort(&mut array_manager, |array| quick_sort_visualization(array));
+            },
+            15 => {
+                run_sort(&mut array_manager, |array| radix_sort_visualization(array));
+            },
+            16 => {
+                run_sort(&mut array_manager, |array| selection_sort_visualization(array));
+            },
+            17 => {
+                run_sort(&mut array_manager, |array| shell_sort_visualization(array));
+            },
+            18 => {
+                run_sort(&mut array_manager, |array| tim_sort_visualization(array));
+            },
+            31 => {
+                // Settings: Show and modify settings
+                let updated_settings = Settings::show_settings_menu(settings.clone());
+                settings = updated_settings;
+                settings.save(); // Save immediately after changes
+            },
+            99 => {
                 // Exit the application
+                settings.save(); // Save settings on exit
                 break;
             }
             _ => {

@@ -8,7 +8,7 @@ use crossterm::{
 use std::io::{stdout, Write};
 use std::time::Duration;
 use rand::Rng;
-use crate::helper::cleanup_terminal;
+use crate::common::cleanup_terminal;
 
 // Represents a single array with metadata for visualization and management
 #[derive(Debug, Clone)]

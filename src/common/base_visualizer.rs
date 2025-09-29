@@ -1,4 +1,4 @@
-use crate::enums::{SelectionState, TeachingQuestion};
+use crate::common::{SelectionState, TeachingQuestion};
 use std::time::Duration;
 
 // Base trait that all visualizers must implement

@@ -1,6 +1,6 @@
-use crate::base_visualizer::{SortVisualizer, VisualizerState};
-use crate::common_visualizer::{show_intro_screen, show_question_feedback, VisualizerDrawer};
-use crate::helper::cleanup_terminal;
+use crate::common::base_visualizer::{SortVisualizer, VisualizerState};
+use crate::common::common_visualizer::{show_intro_screen, show_question_feedback, VisualizerDrawer};
+use crate::common::helper::cleanup_terminal;
 use crossterm::{
     event::{poll, read, Event, KeyCode, KeyEventKind},
     terminal::{enable_raw_mode, size, Clear, ClearType, EnterAlternateScreen},

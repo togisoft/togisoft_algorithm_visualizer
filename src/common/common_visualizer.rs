@@ -1,6 +1,6 @@
 use crossterm::{cursor::MoveTo, style::{Attribute, Color, Print, ResetColor, SetAttribute, SetBackgroundColor, SetForegroundColor}, terminal::{size, Clear, ClearType}, ExecutableCommand, QueueableCommand};
 use std::io::{stdout, Write};
-use crate::enums::{SelectionState, TeachingQuestion};
+use crate::common::enums::{SelectionState, TeachingQuestion};
 use crossterm::event::{poll, read};
 use std::time::Duration;
 

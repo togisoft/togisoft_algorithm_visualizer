@@ -1,9 +1,9 @@
-use crate::array_manager::ArrayData;
-use crate::base_visualizer::{SortVisualizer, VisualizerState};
-use crate::common_visualizer::{show_intro_screen, show_question_feedback, VisualizerDrawer};
-use crate::enums::{SelectionState, TeachingQuestion};
-use crate::helper::{cleanup_terminal, randomize_questions};
-use crate::settings::Settings;
+use crate::common::array_manager::ArrayData;
+use crate::common::base_visualizer::{SortVisualizer, VisualizerState};
+use crate::common::common_visualizer::{show_intro_screen, show_question_feedback, VisualizerDrawer};
+use crate::common::enums::{SelectionState, TeachingQuestion};
+use crate::common::helper::{cleanup_terminal, randomize_questions};
+use crate::common::settings::Settings;
 use crossterm::{
     event::{poll, read, Event, KeyCode, KeyEventKind},
     style::Color,
