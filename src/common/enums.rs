@@ -27,3 +27,13 @@ pub enum SelectionState {
     /// State for elements on the right side of a partition (e.g., in quicksort).
     PartitionRight,
 }
+
+
+// Simple question structure for teaching
+#[derive(Clone)]
+pub struct TeachingQuestion {
+    pub text: String,
+    pub options: Vec<String>,
+    pub correct_index: usize,
+    pub explanation: String,
+}

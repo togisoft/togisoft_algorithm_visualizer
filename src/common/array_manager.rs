@@ -117,10 +117,11 @@ pub fn array_management_screen(manager: &mut ArrayManager) -> bool {
         // --- Menu Options ---
         let menu_options = [
             "1. Generate New Random Array",
-            "2. Select Array for Sorting",
-            "3. View Array Details",
-            "4. Delete Array",
-            "5. Back to Main Menu"
+            "2. Enter Array Manually",
+            "3. Select Array for Sorting",
+            "4. View Array Details",
+            "5. Delete Array",
+            "6. Back to Main Menu"
         ];
         let menu_y = title_y + 3;
         for (i, option) in menu_options.iter().enumerate() {
@@ -178,7 +179,7 @@ pub fn array_management_screen(manager: &mut ArrayManager) -> bool {
                 }
 
                 // Highlight if this array is currently being navigated
-                if (menu_selection >= 1 && menu_selection <= 3) && i == array_selection {
+                if (menu_selection >= 2 && menu_selection <= 4) && i == array_selection {
                     stdout.queue(SetBackgroundColor(Color::DarkGrey)).unwrap();
                     stdout.queue(SetForegroundColor(Color::White)).unwrap();
                 } else {
@@ -197,7 +198,7 @@ pub fn array_management_screen(manager: &mut ArrayManager) -> bool {
         }
 
         // --- Instructions ---
-        let instructions = if (menu_selection >= 1 && menu_selection <= 3) && !manager.arrays.is_empty() {
+        let instructions = if (menu_selection >= 2 && menu_selection <= 4) && !manager.arrays.is_empty() {
             vec![
                 "Use ↑/↓ to select array, ENTER to choose",
                 "Press LEFT arrow to go back to menu",
@@ -227,7 +228,7 @@ pub fn array_management_screen(manager: &mut ArrayManager) -> bool {
                 Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
                     match key_event.code {
                         KeyCode::Up => {
-                            if (menu_selection >= 1 && menu_selection <= 3) && !manager.arrays.is_empty() {
+                            if (menu_selection >= 2 && menu_selection <= 4) && !manager.arrays.is_empty() {
                                 // Navigate array list
                                 array_selection = if array_selection > 0 {
                                     array_selection - 1
@@ -244,7 +245,7 @@ pub fn array_management_screen(manager: &mut ArrayManager) -> bool {
                             }
                         },
                         KeyCode::Down => {
-                            if (menu_selection >= 1 && menu_selection <= 3) && !manager.arrays.is_empty() {
+                            if (menu_selection >= 2 && menu_selection <= 4) && !manager.arrays.is_empty() {
                                 // Navigate array list
                                 array_selection = (array_selection + 1) % manager.arrays.len();
                             } else {
@@ -254,7 +255,7 @@ pub fn array_management_screen(manager: &mut ArrayManager) -> bool {
                         },
                         KeyCode::Left => {
                             // Exit array selection mode
-                            if menu_selection >= 1 && menu_selection <= 3 {
+                            if menu_selection >= 2 && menu_selection <= 4 {
                                 menu_selection = if menu_selection > 0 {
                                     menu_selection - 1
                                 } else {
@@ -275,19 +276,25 @@ pub fn array_management_screen(manager: &mut ArrayManager) -> bool {
                                     }
                                 },
                                 1 => {
+                                    // Enter Array Manually
+                                    if let Some(array) = manual_array_dialog() {
+                                        manager.add_array(array);
+                                    }
+                                },
+                                2 => {
                                     // Select Array for Sorting
                                     if !manager.arrays.is_empty() {
                                         manager.selected_index = Some(array_selection);
                                         show_selection_confirmation(&manager.arrays[array_selection]);
                                     }
                                 },
-                                2 => {
+                                3 => {
                                     // View Array Details
                                     if !manager.arrays.is_empty() {
                                         show_array_details(&manager.arrays[array_selection]);
                                     }
                                 },
-                                3 => {
+                                4 => {
                                     // Delete Array
                                     if !manager.arrays.is_empty() {
                                         if confirm_delete(&manager.arrays[array_selection]) {
@@ -298,7 +305,7 @@ pub fn array_management_screen(manager: &mut ArrayManager) -> bool {
                                         }
                                     }
                                 },
-                                4 => {
+                                5 => {
                                     // Back to Main Menu
                                     cleanup_terminal();
                                     return false;
@@ -407,19 +414,242 @@ fn generate_random_array_dialog() -> Option<ArrayData> {
                         },
                         KeyCode::Enter => {
                             // Generate array if input is valid
-                            if let Ok(size) = input_string.trim().parse::<usize>() {
-                                if size >= 2 && size <= 50 {
+                            if let Ok(array_size) = input_string.trim().parse::<usize>() {
+                                if array_size >= 2 && array_size <= 50 {
                                     let array_name = if name_string.trim().is_empty() {
-                                        format!("Array_{}", size)
+                                        format!("Array_{}", array_size)
                                     } else {
                                         name_string.trim().to_string()
                                     };
-                                    let mut rng = rand::rng();
-                                    let data: Vec<u32> = (0..size)
-                                        .map(|_| rng.random_range(1..=100))
+                                    let mut rng = rand::thread_rng();
+                                    let data: Vec<u32> = (0..array_size)
+                                        .map(|_| rng.gen_range(1..=100))
                                         .collect();
                                     return Some(ArrayData::new(data, array_name));
                                 }
+                            }
+                        },
+                        KeyCode::Esc => {
+                            return None;
+                        },
+                        _ => {}
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+}
+
+// Dialog for entering a new array manually: prompts for size, name, and values
+fn manual_array_dialog() -> Option<ArrayData> {
+    let mut stdout = stdout();
+    let mut mode: i32 = 0; // 0: size, 1: name, 2: values
+    let mut array_size: usize = 0;
+    let mut name: String = String::new();
+    let mut values: Vec<u32> = Vec::new();
+    let mut current_index: usize = 0;
+    let mut active_input: String = String::new();
+    let mut cursor_pos: usize = 0;
+
+    loop {
+        let (width, height) = size().unwrap();
+        stdout.execute(Clear(ClearType::All)).unwrap();
+
+        // --- Title ---
+        let title = "Enter Array Manually";
+        let title_x = (width.saturating_sub(title.len() as u16)) / 2;
+        let title_y = 2;
+        stdout.queue(MoveTo(title_x, title_y)).unwrap();
+        stdout.queue(SetForegroundColor(Color::Yellow)).unwrap();
+        stdout.queue(Print(title)).unwrap();
+        stdout.queue(ResetColor).unwrap();
+
+        let size_x = (width / 2 - 30) as u16;
+
+        match mode {
+            0 => {
+                // Size input
+                let label = "Array Size (2-50): ";
+                stdout.queue(MoveTo(size_x, height / 2 as u16 - 4)).unwrap();
+                stdout.queue(SetForegroundColor(Color::Cyan)).unwrap();
+                stdout.queue(Print(label)).unwrap();
+                stdout.queue(ResetColor).unwrap();
+                let input_x = size_x + label.len() as u16;
+                draw_input_box(&mut stdout, input_x, height / 2 as u16 - 4, 5, &active_input, cursor_pos, true);
+            },
+            1 => {
+                // Name input, show size
+                let size_label = format!("Array Size: {}", array_size);
+                stdout.queue(MoveTo(size_x, height / 2 as u16 - 6)).unwrap();
+                stdout.queue(SetForegroundColor(Color::Cyan)).unwrap();
+                stdout.queue(Print(&size_label)).unwrap();
+                stdout.queue(ResetColor).unwrap();
+
+                let name_label = "Array Name: ";
+                stdout.queue(MoveTo(size_x, height / 2 as u16 - 4)).unwrap();
+                stdout.queue(SetForegroundColor(Color::Cyan)).unwrap();
+                stdout.queue(Print(name_label)).unwrap();
+                stdout.queue(ResetColor).unwrap();
+                let input_x = size_x + name_label.len() as u16;
+                draw_input_box(&mut stdout, input_x, height / 2 as u16 - 4, 20, &active_input, cursor_pos, true);
+            },
+            2 => {
+                // Values input
+                let size_label = format!("Array Size: {}", array_size);
+                stdout.queue(MoveTo(size_x, height / 2 as u16 - 6)).unwrap();
+                stdout.queue(SetForegroundColor(Color::Cyan)).unwrap();
+                stdout.queue(Print(&size_label)).unwrap();
+                stdout.queue(ResetColor).unwrap();
+
+                let name_label = format!("Array Name: {}", name);
+                stdout.queue(MoveTo(size_x, height / 2 as u16 - 4)).unwrap();
+                stdout.queue(SetForegroundColor(Color::Cyan)).unwrap();
+                stdout.queue(Print(&name_label)).unwrap();
+                stdout.queue(ResetColor).unwrap();
+
+                let value_label = format!("Enter value {} of {}: ", current_index + 1, array_size);
+                let value_y = height / 2 as u16 - 2;
+                stdout.queue(MoveTo(size_x, value_y)).unwrap();
+                stdout.queue(SetForegroundColor(Color::Cyan)).unwrap();
+                stdout.queue(Print(&value_label)).unwrap();
+                stdout.queue(ResetColor).unwrap();
+                let input_x = size_x + value_label.len() as u16;
+                draw_input_box(&mut stdout, input_x, value_y, 10, &active_input, cursor_pos, true);
+
+                // Progress
+                let progress = format!("{} values entered", current_index);
+                stdout.queue(MoveTo(size_x, value_y + 2)).unwrap();
+                stdout.queue(SetForegroundColor(Color::Green)).unwrap();
+                stdout.queue(Print(&progress)).unwrap();
+                stdout.queue(ResetColor).unwrap();
+            },
+            _ => {}
+        }
+
+        // --- Instructions ---
+        let instructions: Vec<&str> = match mode {
+            0 | 1 => vec![
+                "Press TAB to switch to next field",
+                "Press ENTER to proceed",
+                "Press ESC to cancel"
+            ],
+            2 => vec![
+                "Enter numbers only",
+                "Press ENTER for next value",
+                "Press ESC to cancel"
+            ],
+            _ => vec!["Press ESC to cancel"],
+        };
+        let inst_y = height.saturating_sub(instructions.len() as u16 + 2);
+        for (i, instruction) in instructions.iter().enumerate() {
+            let inst_x = (width.saturating_sub(instruction.len() as u16)) / 2;
+            stdout.queue(MoveTo(inst_x, inst_y + i as u16)).unwrap();
+            stdout.queue(SetForegroundColor(Color::DarkGrey)).unwrap();
+            stdout.queue(Print(*instruction)).unwrap();
+            stdout.queue(ResetColor).unwrap();
+        }
+
+        stdout.flush().unwrap();
+
+        // --- Handle Input ---
+        if poll(Duration::from_millis(50)).unwrap_or(false) {
+            match read().unwrap_or(Event::Key(KeyCode::Esc.into())) {
+                Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
+                    match key_event.code {
+                        KeyCode::Tab => {
+                            match mode {
+                                0 => {
+                                    if let Ok(s) = active_input.trim().parse::<usize>() {
+                                        if s >= 2 && s <= 50 {
+                                            array_size = s;
+                                            active_input.clear();
+                                            mode = 1;
+                                        }
+                                    }
+                                },
+                                1 => {
+                                    name = if active_input.trim().is_empty() {
+                                        format!("Manual_Array_{}", array_size)
+                                    } else {
+                                        active_input.trim().to_string()
+                                    };
+                                    values.clear();
+                                    current_index = 0;
+                                    active_input.clear();
+                                    mode = 2;
+                                },
+                                _ => {}
+                            }
+                            cursor_pos = active_input.len();
+                        },
+                        KeyCode::Char(c) => {
+                            match mode {
+                                0 => {
+                                    if c.is_ascii_digit() && active_input.len() < 2 {
+                                        active_input.insert(cursor_pos, c);
+                                        cursor_pos += 1;
+                                    }
+                                },
+                                1 => {
+                                    if (c.is_ascii_alphanumeric() || c == ' ' || c == '_') && active_input.len() < 18 {
+                                        active_input.insert(cursor_pos, c);
+                                        cursor_pos += 1;
+                                    }
+                                },
+                                2 => {
+                                    if c.is_ascii_digit() && active_input.len() < 10 {
+                                        active_input.insert(cursor_pos, c);
+                                        cursor_pos += 1;
+                                    }
+                                },
+                                _ => {}
+                            }
+                        },
+                        KeyCode::Backspace => {
+                            if cursor_pos > 0 {
+                                cursor_pos -= 1;
+                                active_input.remove(cursor_pos);
+                            }
+                        },
+                        KeyCode::Enter => {
+                            match mode {
+                                0 => {
+                                    if let Ok(s) = active_input.trim().parse::<usize>() {
+                                        if s >= 2 && s <= 50 {
+                                            array_size = s;
+                                            active_input.clear();
+                                            mode = 1;
+                                            cursor_pos = 0;
+                                        }
+                                    }
+                                },
+                                1 => {
+                                    name = if active_input.trim().is_empty() {
+                                        format!("Manual_Array_{}", array_size)
+                                    } else {
+                                        active_input.trim().to_string()
+                                    };
+                                    values.clear();
+                                    current_index = 0;
+                                    active_input.clear();
+                                    mode = 2;
+                                    cursor_pos = 0;
+                                },
+                                2 => {
+                                    let input_copy = active_input.trim().to_string();
+                                    active_input.clear();
+                                    cursor_pos = 0;
+                                    if let Ok(val) = input_copy.parse::<u32>() {
+                                        values.push(val);
+                                        current_index += 1;
+                                        if current_index == array_size {
+                                            return Some(ArrayData::new(values, name));
+                                        }
+                                    }
+                                    // If invalid, stay on current input (cleared)
+                                },
+                                _ => {}
                             }
                         },
                         KeyCode::Esc => {
@@ -641,17 +871,22 @@ fn display_array_preview(arr: &[u32]) -> String {
 fn display_array_full(arr: &[u32], max_width: usize) -> Vec<String> {
     let mut lines = Vec::new();
     let mut current_line = String::from("[");
-    for (i, value) in arr.iter().enumerate() {
-        let value_str = if i == arr.len() - 1 {
-            format!("{:2}]", value)
-        } else {
-            format!("{:2}, ", value)
-        };
-        if current_line.len() + value_str.len() > max_width && current_line.len() > 1 {
+    let mut first_on_line = true;
+    for (i, &value) in arr.iter().enumerate() {
+        let val_str = format!("{:2}", value);
+        let sep = if first_on_line { "".to_string() } else { ", ".to_string() };
+        let addition = format!("{}{}", sep, val_str);
+        if current_line.len() + addition.len() > max_width as usize && !first_on_line {
+            current_line.push_str("]");
             lines.push(current_line);
-            current_line = format!(" {}", value_str);
+            current_line = format!("[{:2}", value);
+            first_on_line = false;
         } else {
-            current_line.push_str(&value_str);
+            current_line.push_str(&addition);
+            first_on_line = false;
+        }
+        if i == arr.len() - 1 {
+            current_line.push_str("]");
         }
     }
     if !current_line.is_empty() {
@@ -659,4 +894,3 @@ fn display_array_full(arr: &[u32], max_width: usize) -> Vec<String> {
     }
     lines
 }
-
